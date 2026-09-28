@@ -19,6 +19,7 @@ const UMBRAL_ALFA = 128; // píxel "sólido" desde este valor de opacidad
 const MARGEN_ZONA = 6; // px que se agranda la zona para que sea fácil de tocar
 const MAX_PUNTOS = 40;
 const SEPARACION_PUNTO = 2.5; // % del alto por encima de la pieza
+const RADIO_PUNTO = 12; // px del lienzo que ocupa el punto; no puede pisar otra pieza
 
 const [entrada, salida] = process.argv.slice(2);
 if (!entrada || !salida) {
@@ -71,6 +72,20 @@ if (infoPiezas.some((p) => !ordenConfig.includes(p.pieza))) {
   console.warn('Aviso: hay piezas sin orden en sala.config.json; se ordenaron por su borde inferior.');
 }
 
+// Punto indicador: arriba de la pieza. Si ahí pisaría otra pieza (por ejemplo, la mesa
+// delante del sofá), se pone sobre la parte visible de la propia pieza, bien adentro.
+infoPiezas.forEach((p, i) => {
+  const x = Math.round(p.punto[0]);
+  const y = Math.max(Math.round(alto * 0.03), Math.round(p.punto[1] - (SEPARACION_PUNTO / 100) * alto));
+  const otras = infoPiezas.filter((o) => o !== p);
+  if (!pisaOtra(otras, x, y)) {
+    p.punto = [x, y];
+    return;
+  }
+  p.punto = puntoInterior(p, infoPiezas.slice(i + 1));
+  console.log(`${p.pieza}: el punto de arriba pisaba otra pieza; va sobre la pieza.`);
+});
+
 const sala = {
   version: 1,
   id: config.id || path.basename(path.resolve(entrada)),
@@ -92,7 +107,7 @@ for (const p of infoPiezas) {
     sombra: sombras.has(p.pieza) ? await exportar(sombras.get(p.pieza), 'sombra_' + p.pieza) : null,
     zona: {
       puntos: p.puntos.map(([x, y]) => [pct(x, ancho), pct(y, alto)]),
-      punto: [pct(p.punto[0], ancho), Math.max(3, pct(p.punto[1], alto) - SEPARACION_PUNTO)],
+      punto: [pct(p.punto[0], ancho), pct(p.punto[1], alto)],
     },
   });
   console.log(`${p.pieza.padEnd(10)} orden ${String(orden).padStart(3)}  ${String(p.puntos.length).padStart(2)} puntos  caja ${p.caja.join(',')}`);
@@ -159,7 +174,46 @@ function calcularZona(rgba, w, h) {
   if (comp.fraccion < 0.95) {
     console.warn(`Aviso: la pieza tiene partes separadas; la zona cubre ${Math.round(comp.fraccion * 100)} % de su superficie.`);
   }
-  return { puntos, caja: [x0, y0, x1, y1], punto: [(x0 + x1) / 2, y0] };
+  return { puntos, solido, caja: [x0, y0, x1, y1], punto: [(x0 + x1) / 2, y0] };
+}
+
+function pisaOtra(otras, x, y) {
+  for (let dy = -RADIO_PUNTO; dy <= RADIO_PUNTO; dy++) {
+    for (let dx = -RADIO_PUNTO; dx <= RADIO_PUNTO; dx++) {
+      const nx = x + dx, ny = y + dy;
+      if (dx * dx + dy * dy > RADIO_PUNTO ** 2 || nx < 0 || ny < 0 || nx >= ancho || ny >= alto) continue;
+      if (otras.some((o) => o.solido[ny * ancho + nx])) return true;
+    }
+  }
+  return false;
+}
+
+// El píxel visible de la pieza más alejado de sus bordes (distancia en dos pasadas).
+function puntoInterior(p, delante) {
+  const [x0, y0, x1, y1] = p.caja;
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  const d = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const k = (y + y0) * ancho + x + x0;
+      d[y * w + x] = p.solido[k] && !delante.some((o) => o.solido[k]) ? Infinity : 0;
+    }
+  }
+  const v = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : d[y * w + x]);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (d[y * w + x]) d[y * w + x] = Math.min(d[y * w + x], v(x - 1, y) + 1, v(x, y - 1) + 1, v(x - 1, y - 1) + 1.4, v(x + 1, y - 1) + 1.4);
+    }
+  }
+  let mejor = [p.punto[0], p.punto[1]], dmax = -1;
+  for (let y = h - 1; y >= 0; y--) {
+    for (let x = w - 1; x >= 0; x--) {
+      if (!d[y * w + x]) continue;
+      d[y * w + x] = Math.min(d[y * w + x], v(x + 1, y) + 1, v(x, y + 1) + 1, v(x + 1, y + 1) + 1.4, v(x - 1, y + 1) + 1.4);
+      if (d[y * w + x] > dmax) { dmax = d[y * w + x]; mejor = [x + x0, y + y0]; }
+    }
+  }
+  return mejor;
 }
 
 function dilatar(m, w, h, r) {

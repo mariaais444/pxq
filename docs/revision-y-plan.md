@@ -60,13 +60,9 @@ Se abre con doble clic. Usa productos **de prueba** (no reales) y simula las res
 - **LCP ≤ 2,5 s e INP ≤ 200 ms:** hay que medirlos en la tienda real con PageSpeed Insights. En el prototipo local el LCP dio 76 ms sin simular 4G, un número que no sirve para decidir. Con 114 KB en total, no espero problemas.
 - **`shopify theme check`:** todavía no hay tema.
 
-### Algo para que decidas
+### Puntos que pisaban otra pieza (resuelto)
 
-El punto de la **mesa** queda dibujado encima del sofá, porque "justo arriba de la pieza" cae sobre el sofá. Funciona bien: tocarlo abre la mesa. Pero visualmente puede confundir. Opciones:
-
-1. Dejarlo así.
-2. Agregar en `sala.config.json` un ajuste manual del punto por pieza.
-3. Para piezas tapadas, poner el punto en el centro de la pieza.
+El punto de la **mesa** quedaba dibujado encima del sofá. Ahora el script revisa cada punto: si arriba de la pieza pisaría otra, lo pone sobre la parte visible de la propia pieza, bien adentro. En la sala de ejemplo, eso solo cambia la mesa.
 
 ## 3. Definiciones de metaobjetos propuestas (esperan tu OK)
 
