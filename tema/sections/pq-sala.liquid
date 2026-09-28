@@ -1,0 +1,310 @@
+{%- comment -%}
+  p*q · Sala por capas.
+  Arma la sala a partir de un metaobjeto "Sala" (sala). En la página propia de cada sala
+  (templates/metaobject/sala.json) usa esa sala; en cualquier otra página, la elegida en el editor.
+  Todas las capas miden lo mismo que el lienzo y se apilan una encima de otra: nunca se posiciona
+  una pieza con código. Las zonas clickeables vienen calculadas por scripts/preparar-sala.mjs.
+{%- endcomment -%}
+
+{%- liquid
+  assign sala = section.settings.sala
+  if sala == blank and metaobject.system.type == 'sala'
+    assign sala = metaobject
+  endif
+
+  assign ancho = sala.ancho.value | default: 1280
+  assign alto = sala.alto.value | default: 800
+  assign titulo = sala.titulo.value | default: sala.system.handle
+  assign piezas = sala.piezas.value
+
+  # Orden de apilado: de atrás hacia adelante según el campo "orden".
+  # Liquid no ordena objetos por un campo, así que ordenamos textos como "1000010:1003" (orden + posición).
+  assign claves = ''
+  for pieza in piezas
+    assign n = pieza.orden.value | default: 0 | plus: 1000000
+    assign pos = forloop.index0 | plus: 1000
+    assign claves = claves | append: n | append: ':' | append: pos | append: ','
+  endfor
+  assign claves = claves | split: ',' | sort
+
+  assign lienzo_sizes = 'max(100vw, 820px)'
+  assign anchos = '800, 1280, 1600'
+  assign texto_disponible = 'Disponible'
+  assign texto_vendido = 'Vendido'
+-%}
+
+{{ 'pq-sala.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'pq-sala.js' | asset_url }}" defer></script>
+
+<div class="section section--page-width section--mobile-full-width">
+  {%- if sala == blank or sala.fondo.value == blank -%}
+    {%- if request.design_mode -%}
+      <p class="pq-sala__vacia">Elegí una sala en la configuración de la sección, o abrí la página de una sala.</p>
+    {%- endif -%}
+  {%- else -%}
+    <section
+      class="pq-sala"
+      data-pq-sala
+      data-vendido="{{ section.settings.vendido }}"
+      data-puntos="{% if section.settings.mostrar_puntos %}si{% else %}no{% endif %}"
+      aria-label="{{ titulo | escape }}"
+    >
+      {%- if template.type == 'metaobject' -%}
+        <h1 class="pq-sala__titulo">{{ titulo | escape }}</h1>
+      {%- endif -%}
+
+      <div class="pq-sala__scroller">
+        <div class="pq-sala__lienzo" style="--pq-ancho: {{ ancho }}; --pq-alto: {{ alto }};">
+          {{-
+            sala.fondo.value
+            | image_url: width: 1600
+            | image_tag:
+              class: 'pq-sala__capa pq-sala__fondo',
+              widths: anchos,
+              sizes: lienzo_sizes,
+              width: ancho,
+              height: alto,
+              alt: titulo,
+              loading: 'eager',
+              fetchpriority: 'high'
+          -}}
+
+          {%- for clave in claves -%}
+            {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+            {%- assign pieza = piezas[i] -%}
+            {%- if pieza.sombra.value != blank and pieza.producto.value != blank -%}
+              {{-
+                pieza.sombra.value
+                | image_url: width: 1600
+                | image_tag:
+                  class: 'pq-sala__capa pq-sala__sombra',
+                  data-pieza: pieza.system.handle,
+                  widths: anchos,
+                  sizes: lienzo_sizes,
+                  width: ancho,
+                  height: alto,
+                  alt: '',
+                  loading: 'eager',
+                  fetchpriority: 'low',
+                  decoding: 'async'
+              -}}
+            {%- endif -%}
+          {%- endfor -%}
+
+          {%- for clave in claves -%}
+            {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+            {%- assign pieza = piezas[i] -%}
+            {%- if pieza.capa.value != blank and pieza.producto.value != blank -%}
+              {{-
+                pieza.capa.value
+                | image_url: width: 1600
+                | image_tag:
+                  class: 'pq-sala__capa pq-sala__objeto',
+                  data-pieza: pieza.system.handle,
+                  widths: anchos,
+                  sizes: lienzo_sizes,
+                  width: ancho,
+                  height: alto,
+                  alt: '',
+                  loading: 'eager',
+                  fetchpriority: 'low',
+                  decoding: 'async'
+              -}}
+            {%- endif -%}
+          {%- endfor -%}
+
+          {%- comment -%} Las zonas van en el mismo orden: en el SVG, la última dibujada es la que recibe el toque. {%- endcomment -%}
+          <svg
+            class="pq-sala__zonas"
+            viewBox="0 0 {{ ancho }} {{ alto }}"
+            preserveAspectRatio="none"
+            aria-label="Piezas de la sala"
+          >
+            {%- for clave in claves -%}
+              {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+              {%- assign pieza = piezas[i] -%}
+              {%- assign producto = pieza.producto.value -%}
+              {%- assign zona = pieza.zona.value -%}
+              {%- if producto != blank and zona.puntos.size > 2 -%}
+                {%- capture etiqueta -%}
+                  {{- pieza.etiqueta.value | default: producto.title -}}, {{ producto.price | money | strip_html }},
+                  {{- ' ' -}}
+                  {%- if producto.available -%}disponible{%- else -%}vendido{%- endif -%}
+                {%- endcapture -%}
+                <polygon
+                  class="pq-sala__zona"
+                  data-pq-abrir
+                  data-pieza="{{ pieza.system.handle }}"
+                  points="
+                    {%- for p in zona.puntos -%}
+                      {{- p[0] | times: ancho | divided_by: 100.0 | round: 1 }},{{ p[1] | times: alto | divided_by: 100.0 | round: 1 }}
+                      {%- unless forloop.last %} {% endunless -%}
+                    {%- endfor -%}
+                  "
+                  role="button"
+                  tabindex="0"
+                  aria-haspopup="dialog"
+                  aria-label="{{ etiqueta | escape }}"
+                ></polygon>
+              {%- endif -%}
+            {%- endfor -%}
+          </svg>
+
+          {%- comment -%} Puntos indicadores: decorativos, el botón accesible es la zona. {%- endcomment -%}
+          {%- for clave in claves -%}
+            {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+            {%- assign pieza = piezas[i] -%}
+            {%- assign zona = pieza.zona.value -%}
+            {%- if pieza.producto.value != blank and zona.punto.size == 2 -%}
+              <button
+                type="button"
+                class="pq-sala__punto"
+                data-pq-abrir
+                data-pieza="{{ pieza.system.handle }}"
+                style="--x: {{ zona.punto[0] }}; --y: {{ zona.punto[1] }};"
+                tabindex="-1"
+                aria-hidden="true"
+              ></button>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+
+      {%- if section.settings.texto_ayuda != blank -%}
+        <p class="pq-sala__ayuda">{{ section.settings.texto_ayuda | escape }}</p>
+      {%- endif -%}
+
+      {%- assign vecinas = sala.salas_vecinas.value -%}
+      {%- if vecinas.size > 0 -%}
+        <nav class="pq-sala__puertas" aria-label="Otras salas">
+          <ul>
+            {%- for vecina in vecinas -%}
+              {%- if vecina.url != blank -%}
+                <li>
+                  <a href="{{ vecina.url }}">
+                    {{- vecina.titulo.value | default: vecina.system.handle | escape }} →</a
+                  >
+                </li>
+              {%- endif -%}
+            {%- endfor -%}
+          </ul>
+        </nav>
+      {%- endif -%}
+
+      <h2 class="pq-sala__subtitulo">Piezas en esta sala</h2>
+      <ul class="pq-sala__lista">
+        {%- for clave in claves -%}
+          {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+          {%- assign pieza = piezas[i] -%}
+          {%- assign producto = pieza.producto.value -%}
+          {%- if producto != blank -%}
+            <li data-pieza="{{ pieza.system.handle }}">
+              <a href="{{ producto.url }}">{{ producto.title | escape }}</a>
+              <span>{{ producto.price | money | strip_html }}</span>
+              <span
+                data-pq-estado
+                data-pieza="{{ pieza.system.handle }}"
+                {% unless producto.available %}
+                  data-vendido
+                {% endunless %}
+              >
+                {%- if producto.available -%}{{ texto_disponible }}{%- else -%}{{ texto_vendido }}{%- endif -%}
+              </span>
+              <button
+                type="button"
+                class="pq-sala__ver"
+                data-pq-abrir
+                data-pieza="{{ pieza.system.handle }}"
+                aria-haspopup="dialog"
+              >
+                Ver ficha
+              </button>
+            </li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+
+      {% render 'pq-ficha' %}
+
+      {%- comment -%} Datos de cada pieza para el panel. El stock se vuelve a confirmar al abrirlo. {%- endcomment -%}
+      <script type="application/json" data-pq-productos>
+        {
+          {%- assign primero = true -%}
+          {%- for clave in claves -%}
+            {%- assign i = clave | split: ':' | last | minus: 1000 -%}
+            {%- assign pieza = piezas[i] -%}
+            {%- assign producto = pieza.producto.value -%}
+            {%- if producto != blank -%}
+              {%- assign variante = producto.selected_or_first_available_variant -%}
+              {%- unless primero %},{% endunless -%}
+              {%- assign primero = false -%}
+              {{ pieza.system.handle | json }}: {
+                "handle": {{ producto.handle | json }},
+                "titulo": {{ producto.title | json }},
+                "etiqueta": {{ pieza.etiqueta.value | default: producto.title | json }},
+                "precio": {{ producto.price | money | strip_html | json }},
+                "precio_centavos": {{ variante.price | json }},
+                "moneda": {{ cart.currency.iso_code | json }},
+                "disponible": {{ producto.available | json }},
+                "variante": {{ variante.id | json }},
+                "url": {{ producto.url | json }},
+                "imagen": {% if producto.featured_image %}{{ producto.featured_image | image_url: width: 560 | json }}{% else %}null{% endif %},
+                "imagen_alt": {{ producto.featured_image.alt | default: producto.title | json }}
+              }
+            {%- endif -%}
+          {%- endfor -%}
+        }
+      </script>
+    </section>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Sala p*q",
+  "tag": "div",
+  "class": "section-wrapper",
+  "settings": [
+    {
+      "type": "metaobject",
+      "id": "sala",
+      "metaobject_type": "sala",
+      "label": "Sala",
+      "info": "En la página propia de cada sala se usa esa sala. Elegí una solo si ponés esta sección en otra página."
+    },
+    {
+      "type": "checkbox",
+      "id": "mostrar_puntos",
+      "label": "Mostrar puntos sobre las piezas",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "vendido",
+      "label": "Piezas vendidas",
+      "options": [
+        {
+          "value": "ocultar",
+          "label": "Ocultar pieza y sombra"
+        },
+        {
+          "value": "punto",
+          "label": "Dejarlas y mostrar punto rojo"
+        }
+      ],
+      "default": "ocultar"
+    },
+    {
+      "type": "text",
+      "id": "texto_ayuda",
+      "label": "Texto de ayuda",
+      "default": "Tocá un mueble u obra para ver su precio. También podés elegir desde la lista."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Sala p*q"
+    }
+  ]
+}
+{% endschema %}

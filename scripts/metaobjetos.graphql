@@ -1,0 +1,100 @@
+# Definiciones de metaobjetos para las salas de p*q.
+# Se pegan en la app "Shopify GraphiQL App" (o cualquier cliente de la Admin API) y se corren en orden.
+# SIN PROBAR en una tienda: el entorno donde se escribió no puede conectarse a Shopify.
+# Si preferís no usar código, la etapa 5 explica cómo crear lo mismo desde el admin.
+
+# 1) "Pieza en sala". Copiá el "id" que devuelve (gid://shopify/MetaobjectDefinition/...).
+mutation CrearPiezaEnSala {
+  metaobjectDefinitionCreate(
+    definition: {
+      type: "pieza_en_sala"
+      name: "Pieza en sala"
+      displayNameKey: "etiqueta"
+      access: { storefront: PUBLIC_READ }
+      fieldDefinitions: [
+        { key: "producto", name: "Producto", type: "product_reference", required: true }
+        {
+          key: "capa"
+          name: "Capa"
+          type: "file_reference"
+          required: true
+          validations: [{ name: "file_type_options", value: "[\"Image\"]" }]
+        }
+        {
+          key: "sombra"
+          name: "Sombra"
+          type: "file_reference"
+          validations: [{ name: "file_type_options", value: "[\"Image\"]" }]
+        }
+        { key: "orden", name: "Orden", type: "number_integer", required: true }
+        { key: "zona", name: "Zona", type: "json", required: true }
+        { key: "etiqueta", name: "Etiqueta accesible", type: "single_line_text_field", required: true }
+      ]
+    }
+  ) {
+    metaobjectDefinition { id type }
+    userErrors { field message code }
+  }
+}
+
+# 2) "Sala". Reemplazá PIEZA_ID por el id del paso 1.
+mutation CrearSala {
+  metaobjectDefinitionCreate(
+    definition: {
+      type: "sala"
+      name: "Sala"
+      displayNameKey: "titulo"
+      access: { storefront: PUBLIC_READ }
+      capabilities: {
+        publishable: { enabled: true }
+        onlineStore: { enabled: true, data: { urlHandle: "salas" } }
+      }
+      fieldDefinitions: [
+        { key: "titulo", name: "Título", type: "single_line_text_field", required: true }
+        {
+          key: "fondo"
+          name: "Fondo"
+          type: "file_reference"
+          required: true
+          validations: [{ name: "file_type_options", value: "[\"Image\"]" }]
+        }
+        { key: "ancho", name: "Ancho del lienzo", type: "number_integer", required: true }
+        { key: "alto", name: "Alto del lienzo", type: "number_integer", required: true }
+        {
+          key: "piezas"
+          name: "Piezas"
+          type: "list.metaobject_reference"
+          required: true
+          validations: [{ name: "metaobject_definition_id", value: "PIEZA_ID" }]
+        }
+        { key: "descripcion_seo", name: "Descripción para SEO", type: "multi_line_text_field" }
+      ]
+    }
+  ) {
+    metaobjectDefinition { id type }
+    userErrors { field message code }
+  }
+}
+
+# 3) "Salas vecinas" apunta a la misma definición "Sala", así que se agrega una vez creada.
+#    Reemplazá SALA_ID (las dos veces) por el id del paso 2.
+mutation AgregarSalasVecinas {
+  metaobjectDefinitionUpdate(
+    id: "SALA_ID"
+    definition: {
+      fieldDefinitions: [
+        {
+          create: {
+            key: "salas_vecinas"
+            name: "Salas vecinas"
+            type: "list.metaobject_reference"
+            validations: [{ name: "metaobject_definition_id", value: "SALA_ID" }]
+          }
+        }
+      ]
+    }
+  ) {
+    metaobjectDefinition { id }
+    userErrors { field message code }
+  }
+}

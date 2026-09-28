@@ -1,0 +1,4 @@
+node_modules/
+.DS_Store
+# Generado por scripts/probar-seccion.mjs
+prototipo/seccion.html
