@@ -103,6 +103,24 @@
   box-shadow: 0 0 0 2px var(--pq-papel), 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
+/* En celular la sala va de borde a borde; el texto conserva margen. */
+.pq-sala > :not(.pq-sala__scroller):not(dialog):not(script) {
+  margin-inline: var(--pq-margen, clamp(1rem, 4vw, 2.5rem));
+}
+@media (min-width: 750px) {
+  .pq-sala {
+    --pq-margen: 0;
+  }
+}
+.pq-sala__titulo {
+  margin: 1rem 0;
+}
+.pq-sala__vacia {
+  padding: 2rem;
+  border: 1px dashed currentColor;
+  text-align: center;
+}
+
 /* --- Ayuda, puertas y lista de piezas --- */
 .pq-sala__ayuda {
   margin: 0.75rem 0;
@@ -241,6 +259,9 @@
 .pq-ficha__mensaje {
   min-height: 1.5em;
   margin: 0.75rem 0;
+}
+.pq-ficha__enlace {
+  color: inherit;
 }
 .pq-ficha__mensaje[data-error] {
   color: var(--pq-vendido);

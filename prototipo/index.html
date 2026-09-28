@@ -8,7 +8,7 @@
     <meta name="description" content="Prototipo local de una sala ilustrada de p*q, con productos de prueba.">
     <!-- En el tema, el fondo sale en el HTML del servidor; acá lo pedimos antes porque la sala se arma con JS. -->
     <link rel="preload" as="image" href="sala/fondo-1280.webp" imagesrcset="sala/fondo-800.webp 800w, sala/fondo-1280.webp 1280w" imagesizes="max(100vw, 820px)" fetchpriority="high">
-    <link rel="stylesheet" href="pq-sala.css">
+    <link rel="stylesheet" href="../tema/assets/pq-sala.css">
     <style>
       body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #fbf8f3; color: #1d1a17; }
       .encabezado { display: flex; justify-content: space-between; align-items: center; padding: 1rem clamp(1rem, 4vw, 2.5rem); }
@@ -41,7 +41,8 @@
       </aside>
     </main>
     <script src="sala/sala.data.js"></script>
+    <script src="api-simulada.js"></script>
     <script src="prototipo.js"></script>
-    <script src="pq-sala.js"></script>
+    <script src="../tema/assets/pq-sala.js"></script>
   </body>
 </html>

@@ -36,7 +36,7 @@ Se abre con doble clic. Usa productos **de prueba** (no reales) y simula las res
 - El **sillón** figura disponible, pero al abrirlo se confirma que se vendió.
 - La **mesa** se puede agregar una sola vez. La segunda vez responde 422, como hace Shopify cuando no hay más stock.
 
-`pq-sala.js` y `pq-sala.css` están escritos para copiarse al tema **tal cual**. El prototipo arma el mismo HTML que va a generar la sección de Liquid.
+`pq-sala.js` y `pq-sala.css` están en `tema/assets/` y el prototipo usa esos mismos archivos. El prototipo arma el mismo HTML que va a generar la sección de Liquid.
 
 ### Qué medí (Chromium, prueba automática `scripts/probar-prototipo.mjs`)
 
@@ -58,7 +58,7 @@ Se abre con doble clic. Usa productos **de prueba** (no reales) y simula las res
 
 - **Safari y Android real:** solo tengo Chromium. Prueba propuesta: abrir el prototipo en un iPhone y en un Android de gama media, y tocar las 6 piezas.
 - **LCP ≤ 2,5 s e INP ≤ 200 ms:** hay que medirlos en la tienda real con PageSpeed Insights. En el prototipo local el LCP dio 76 ms sin simular 4G, un número que no sirve para decidir. Con 114 KB en total, no espero problemas.
-- **`shopify theme check`:** todavía no hay tema.
+- **`shopify theme check`:** resuelto en la etapa 4 (0 errores).
 
 ### Puntos que pisaban otra pieza (resuelto)
 
@@ -106,11 +106,11 @@ Con esto, cada sala tendría una dirección del tipo `/pages/salas/<nombre>`. **
 Para crearlas hay dos caminos. Los dos se van a detallar en la etapa 5:
 
 - **Desde el admin**, sin código: *Configuración → Datos personalizados → Metaobjetos → Agregar definición*. Primero "Pieza en sala" y después "Sala". El campo `salas_vecinas` se agrega al final, porque apunta a la misma definición.
-- **Con una consulta GraphQL** (`metaobjectDefinitionCreate`) desde la app GraphiQL de Shopify. La escribo en la etapa 4 y la pruebo en la tienda de desarrollo antes de pasártela, porque no pude verificarla acá.
+- **Con una consulta GraphQL** (`metaobjectDefinitionCreate`) desde la app GraphiQL de Shopify. Está en `scripts/metaobjetos.graphql`. Todavía no se probó en la tienda.
 
 ## 4. Plan de las etapas que faltan
 
-**Etapa 4: tema.** Necesito que me digas:
+**Etapa 4: tema.** ✅ Hecha, salvo la prueba en la tienda. Ver `docs/etapa-4-tema.md`. Lo que sigue es el plan original:
 
 - Qué tema vas a usar. Recomiendo **Horizon**, que es el tema gratuito actual de Shopify, o Dawn.
 - Una **tienda de desarrollo** (gratis con Shopify Partners) donde correr `shopify theme dev`.

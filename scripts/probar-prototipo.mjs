@@ -1,10 +1,10 @@
 // Prueba automática del prototipo con Playwright (clics en las 6 piezas, teclado, stock, carrito, 422, peso en celular).
-// Uso: (cd prototipo && python3 -m http.server 8765) y en otra terminal:
-//   npm i -D playwright && node scripts/probar-prototipo.mjs [url]
+// Uso: python3 -m http.server 8765 (desde la raíz del repo) y en otra terminal:
+//   node scripts/probar-prototipo.mjs [url]   (por defecto el prototipo; también sirve para prototipo/seccion.html)
 
 import { chromium } from 'playwright';
 const S = process.env.CAPTURAS || '.';
-const URL = process.argv[2] || 'http://localhost:8765/index.html';
+const URL = process.argv[2] || 'http://localhost:8765/prototipo/index.html';
 const b = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 let fallas = 0;
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FALLA') + ' ' + m); if (!c) fallas++; };

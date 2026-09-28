@@ -5,9 +5,15 @@
   "description": "Salas por capas de p*q para Shopify",
   "type": "module",
   "scripts": {
-    "preparar:ejemplo": "node scripts/preparar-sala.mjs capas-ejemplo prototipo/sala"
+    "preparar:ejemplo": "node scripts/preparar-sala.mjs capas-ejemplo prototipo/sala",
+    "probar:seccion": "node scripts/probar-seccion.mjs",
+    "instalar": "node scripts/instalar-en-tema.mjs"
   },
   "dependencies": {
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "liquidjs": "^10.29.0",
+    "playwright": "^1.63.0"
   }
 }

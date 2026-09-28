@@ -1,0 +1,18 @@
+{%- doc -%}
+  Panel de producto de la sala p*q. Arranca vacío: assets/pq-sala.js lo completa con los datos
+  de la pieza tocada. Es lateral en escritorio y una hoja desde abajo en celular.
+{%- enddoc -%}
+
+<dialog class="pq-ficha" data-pq-ficha aria-labelledby="pq-ficha-titulo-{{ section.id }}">
+  <button type="button" class="pq-ficha__cerrar" data-pq-cerrar aria-label="Cerrar">×</button>
+  <img class="pq-ficha__imagen" data-pq-f="imagen" src="data:," alt="" width="560" height="560" hidden>
+  <h2 class="pq-ficha__titulo" id="pq-ficha-titulo-{{ section.id }}" data-pq-f="titulo"></h2>
+  <p class="pq-ficha__precio" data-pq-f="precio"></p>
+  <p class="pq-ficha__estado" data-pq-f="estado"></p>
+  <div class="pq-ficha__acciones">
+    <button type="button" data-pq-agregar>Agregar al carrito</button>
+    <button type="button" data-pq-comprar>Comprar ahora</button>
+  </div>
+  <p class="pq-ficha__mensaje" data-pq-f="mensaje" role="status" aria-live="polite"></p>
+  <a class="pq-ficha__enlace" data-pq-f="enlace" href="#">Ver ficha completa</a>
+</dialog>

@@ -21,6 +21,10 @@
       });
       return { ok: r.ok, status: r.status, datos: await r.json().catch(() => ({})) };
     },
+    async carrito() {
+      const r = await fetch(raiz() + 'cart.js', { headers: { Accept: 'application/json' } });
+      return r.json();
+    },
     irAlCheckout() {
       window.location.href = raiz() + 'checkout';
     },
@@ -102,7 +106,7 @@
       this.piezas(pieza).forEach((n) => {
         n.toggleAttribute('data-vendido', !disponible);
         if (n.matches('.pq-sala__zona')) {
-          n.setAttribute('aria-label', p.titulo + ', ' + p.precio + ', ' + texto.toLowerCase());
+          n.setAttribute('aria-label', (p.etiqueta || p.titulo) + ', ' + p.precio + ', ' + texto.toLowerCase());
           n.setAttribute('tabindex', vendidoOculto ? '-1' : '0');
           n.setAttribute('aria-hidden', vendidoOculto ? 'true' : 'false');
         }
@@ -162,8 +166,9 @@
       const p = this.productos[pieza];
       if (!p || !p.disponible) return;
       const cuerpo = { items: [{ id: p.variante, quantity: 1 }] };
-      if (!comprarAhora && this.secciones.length) {
-        cuerpo.sections = this.secciones.join(',');
+      const carrito = comprarAhora ? null : carritoDelTema(this.secciones);
+      if (carrito && carrito.secciones.length) {
+        cuerpo.sections = carrito.secciones.join(',');
         cuerpo.sections_url = window.location.pathname;
       }
       this.botones.forEach((b) => (b.disabled = true));
@@ -187,23 +192,65 @@
       }
       if (comprarAhora) return window.PQSala.api.irAlCheckout();
 
-      this.actualizarSecciones(r.datos.sections);
-      document.dispatchEvent(new CustomEvent('pq:carrito-actualizado', { detail: r.datos }));
       this.f.mensaje.textContent = TEXTOS.agregado;
       this.botones.forEach((b) => (b.disabled = !p.disponible));
+      document.dispatchEvent(new CustomEvent('pq:carrito-actualizado', { detail: r.datos }));
+      if (carrito) await carrito.avisar(r.datos, this.ficha, p.variante).catch(() => {});
     }
+  }
 
-    // Reemplaza las secciones del carrito del tema con el HTML que vino en la misma respuesta.
-    actualizarSecciones(secciones) {
-      if (!secciones) return;
-      for (const id in secciones) {
-        const destino = document.getElementById('shopify-section-' + id);
-        if (!destino || !secciones[id]) continue;
-        const doc = new DOMParser().parseFromString(secciones[id], 'text/html');
-        const nuevo = doc.getElementById('shopify-section-' + id);
-        destino.innerHTML = (nuevo || doc.body).innerHTML;
-      }
+  // Cada tema actualiza su carrito a su manera. Devolvemos qué secciones pedir y cómo avisarle.
+  function carritoDelTema(extra) {
+    // Horizon: escucha el evento estándar de Shopify (cart:lines-update) y sus listas de carrito
+    // se re-dibujan con el HTML de las secciones que vienen en la respuesta.
+    const listas = [...document.querySelectorAll('cart-items-component[data-section-id]')].map((n) => n.dataset.sectionId);
+    if (listas.length || document.querySelector('cart-icon, cart-drawer-component')) {
+      return {
+        secciones: [...new Set(listas.concat(extra))],
+        async avisar(datos, origen, variante) {
+          const { CartLinesUpdateEvent } = await import('@shopify/events');
+          const c = await window.PQSala.api.carrito();
+          const diferida = CartLinesUpdateEvent.createPromise();
+          // Se dispara desde la ficha: si el tema abre su carrito lateral, espera a que la cerremos.
+          origen.dispatchEvent(
+            new CartLinesUpdateEvent({
+              action: 'add',
+              context: 'product',
+              lines: [{ merchandiseId: String(variante), quantity: 1 }],
+              promise: diferida.promise,
+            })
+          );
+          diferida.resolve({
+            cart: CartLinesUpdateEvent.createCartFromAjaxResponse(c),
+            detail: { items: c.items, itemCount: 1, sections: datos.sections, didError: false, source: 'pq-sala' },
+          });
+        },
+      };
     }
+    // Dawn y temas parecidos: el carrito lateral o el aviso saben re-dibujarse solos.
+    const dawn = document.querySelector('cart-drawer, cart-notification');
+    if (dawn && dawn.getSectionsToRender && dawn.renderContents) {
+      return {
+        secciones: [...new Set(dawn.getSectionsToRender().map((s) => s.id).concat(extra))],
+        async avisar(datos, origen) {
+          origen.close(); // el carrito de Dawn no es un diálogo: si no, quedaría tapado por la ficha
+          dawn.classList.remove('is-empty');
+          dawn.renderContents(Object.assign({}, datos.items && datos.items[0], { sections: datos.sections }));
+        },
+      };
+    }
+    // Otro tema: reemplazamos las secciones indicadas en data-secciones-carrito.
+    return {
+      secciones: extra,
+      async avisar(datos) {
+        for (const id in datos.sections || {}) {
+          const destino = document.getElementById('shopify-section-' + id);
+          if (!destino || !datos.sections[id]) continue;
+          const doc = new DOMParser().parseFromString(datos.sections[id], 'text/html');
+          destino.innerHTML = (doc.getElementById('shopify-section-' + id) || doc.body).innerHTML;
+        }
+      },
+    };
   }
 
   const iniciar = () =>
