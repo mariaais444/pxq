@@ -1,8 +1,10 @@
 {
+  "layout": "pq-sala",
   "sections": {
     "main": {
       "type": "pq-sala",
       "settings": {
+        "tamano": "pantalla",
         "mostrar_puntos": true,
         "vendido": "ocultar",
         "texto_ayuda": "Tocá un mueble u obra para ver su precio. También podés elegir desde la lista."

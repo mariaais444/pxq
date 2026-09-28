@@ -75,9 +75,29 @@
         this.actual = null;
       });
 
-      // En pantallas angostas la sala se desplaza de costado: arrancamos en el centro.
+      // La sala arranca centrada. En pantalla completa ocupa el alto visible debajo del encabezado.
       const s = el.querySelector('.pq-sala__scroller');
-      if (s && s.scrollWidth > s.clientWidth) s.scrollLeft = (s.scrollWidth - s.clientWidth) / 2;
+      let anchoPrevio = 0;
+      const ajustar = () => {
+        if (!s || window.innerWidth === anchoPrevio) return; // la barra del celular cambia el alto: no re-centrar
+        anchoPrevio = window.innerWidth;
+        if (el.dataset.tamano === 'pantalla') {
+          const arriba = s.getBoundingClientRect().top + window.scrollY;
+          el.style.setProperty('--pq-alto-visible', Math.max(320, window.innerHeight - arriba) + 'px');
+        }
+        s.scrollLeft = (s.scrollWidth - s.clientWidth) / 2;
+        s.scrollTop = (s.scrollHeight - s.clientHeight) / 2;
+      };
+      ajustar();
+      window.addEventListener('resize', ajustar);
+      // Con mouse, mirar alrededor: la sala se desplaza hacia donde apunta el cursor. En celular se arrastra con el dedo.
+      if (s && el.dataset.tamano === 'pantalla' && matchMedia('(pointer: fine)').matches) {
+        s.addEventListener('pointermove', (e) => {
+          const r = s.getBoundingClientRect();
+          s.scrollLeft = ((e.clientX - r.left) / r.width) * (s.scrollWidth - s.clientWidth);
+          s.scrollTop = ((e.clientY - r.top) / r.height) * (s.scrollHeight - s.clientHeight);
+        });
+      }
     }
 
     piezas(pieza, selector = '') {
@@ -195,6 +215,9 @@
       this.f.mensaje.textContent = TEXTOS.agregado;
       this.botones.forEach((b) => (b.disabled = !p.disponible));
       document.dispatchEvent(new CustomEvent('pq:carrito-actualizado', { detail: r.datos }));
+      // Contador propio de la barra de las salas (layout/pq-sala.liquid).
+      const contadores = document.querySelectorAll('[data-pq-contador]');
+      if (contadores.length) window.PQSala.api.carrito().then((c) => contadores.forEach((n) => (n.textContent = c.item_count)), () => {});
       if (carrito) await carrito.avisar(r.datos, this.ficha, p.variante).catch(() => {});
     }
   }

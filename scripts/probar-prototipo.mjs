@@ -19,8 +19,13 @@ async function abrirPagina(q = '', vp = { width: 1280, height: 900 }) {
   return page;
 }
 async function clicLienzo(page, x, y) {
-  const r = await page.locator('.pq-sala__lienzo').boundingBox();
-  await page.mouse.click(r.x + (x / 1280) * r.width, r.y + (y / 800) * r.height);
+  // En pantalla completa la sala se mueve con el mouse: nos acercamos, volvemos a medir y recién ahí hacemos clic.
+  const punto = async () => {
+    const r = await page.locator('.pq-sala__lienzo').boundingBox();
+    return [r.x + (x / 1280) * r.width, r.y + (y / 800) * r.height];
+  };
+  for (let i = 0; i < 4; i++) await page.mouse.move(...(await punto()));
+  await page.mouse.click(...(await punto()));
 }
 const titulo = (page) => page.locator('[data-pq-f=titulo]').textContent();
 const cerrar = async (page) => { await page.keyboard.press('Escape'); await page.waitForTimeout(50); };
@@ -134,7 +139,7 @@ const cerrar = async (page) => { await page.keyboard.press('Escape'); await page
   cdp.on('Network.responseReceived', (e) => archivos.push(e.response.url.split('/').pop()));
   await page.goto(URL, { waitUntil: 'networkidle' });
   const s = await page.locator('.pq-sala__scroller').evaluate((n) => ({ l: n.scrollLeft, max: n.scrollWidth - n.clientWidth, w: n.scrollWidth }));
-  ok(Math.abs(s.l - s.max / 2) < 2 && s.w === 820, `celular: lienzo de ${s.w} px, centrado (scrollLeft ${s.l} de ${s.max})`);
+  ok(Math.abs(s.l - s.max / 2) < 2 && s.w >= 820, `celular: lienzo de ${s.w} px, centrado (scrollLeft ${s.l} de ${s.max})`);
   ok(bytes < 1.5 * 1024 * 1024, `peso total de la página en celular (DPR 3): ${(bytes / 1024).toFixed(0)} KB`);
   console.log('      archivos: ' + archivos.join(', '));
   const lcp = await page.evaluate(() => new Promise((r) => new PerformanceObserver((l) => { const e = l.getEntries().at(-1); r({ t: Math.round(e.startTime), el: e.element && e.element.className }); }).observe({ type: 'largest-contentful-paint', buffered: true })));

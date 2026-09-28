@@ -92,7 +92,7 @@ liquid.registerFilter('image_tag', (u, ...args) => {
 });
 
 const globales = (vendido, puntos) => ({
-  section: { id: 'template--1__main', settings: { sala: null, mostrar_puntos: puntos, vendido, texto_ayuda: 'Tocá un mueble u obra para ver su precio. También podés elegir desde la lista.' } },
+  section: { id: 'template--1__main', settings: { sala: null, tamano: 'pantalla', mostrar_puntos: puntos, vendido, texto_ayuda: 'Tocá un mueble u obra para ver su precio. También podés elegir desde la lista.' } },
   metaobject: metaobjeto,
   template: { type: 'metaobject', name: 'sala' },
   request: { design_mode: false },

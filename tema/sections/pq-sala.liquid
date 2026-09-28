@@ -27,7 +27,9 @@
   endfor
   assign claves = claves | split: ',' | sort
 
-  assign lienzo_sizes = 'max(100vw, 820px)'
+  # En pantalla completa el lienzo puede ser más ancho que la pantalla (se recorre de costado).
+  assign proporcion = ancho | times: 100 | divided_by: alto
+  assign lienzo_sizes = 'max(100vw, 820px, ' | append: proporcion | append: 'vh)'
   assign anchos = '800, 1280, 1600'
   assign texto_disponible = 'Disponible'
   assign texto_vendido = 'Vendido'
@@ -36,7 +38,7 @@
 {{ 'pq-sala.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'pq-sala.js' | asset_url }}" defer></script>
 
-<div class="section section--page-width section--mobile-full-width">
+<div class="section {% if section.settings.tamano == 'ancho' %}section--page-width section--mobile-full-width{% else %}section--full-width{% endif %}">
   {%- if sala == blank or sala.fondo.value == blank -%}
     {%- if request.design_mode -%}
       <p class="pq-sala__vacia">Elegí una sala en la configuración de la sección, o abrí la página de una sala.</p>
@@ -46,10 +48,11 @@
       class="pq-sala"
       data-pq-sala
       data-vendido="{{ section.settings.vendido }}"
+      data-tamano="{{ section.settings.tamano | default: 'pantalla' }}"
       data-puntos="{% if section.settings.mostrar_puntos %}si{% else %}no{% endif %}"
       aria-label="{{ titulo | escape }}"
     >
-      {%- if template.type == 'metaobject' -%}
+      {%- if section.settings.sala == blank -%}
         <h1 class="pq-sala__titulo">{{ titulo | escape }}</h1>
       {%- endif -%}
 
@@ -71,7 +74,7 @@
 
           {%- for clave in claves -%}
             {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-            {%- assign pieza = piezas[i] -%}
+            {%- for pieza in piezas offset: i limit: 1 -%}
             {%- if pieza.sombra.value != blank and pieza.producto.value != blank -%}
               {{-
                 pieza.sombra.value
@@ -90,10 +93,11 @@
               -}}
             {%- endif -%}
           {%- endfor -%}
+          {%- endfor -%}
 
           {%- for clave in claves -%}
             {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-            {%- assign pieza = piezas[i] -%}
+            {%- for pieza in piezas offset: i limit: 1 -%}
             {%- if pieza.capa.value != blank and pieza.producto.value != blank -%}
               {{-
                 pieza.capa.value
@@ -112,6 +116,7 @@
               -}}
             {%- endif -%}
           {%- endfor -%}
+          {%- endfor -%}
 
           {%- comment -%} Las zonas van en el mismo orden: en el SVG, la última dibujada es la que recibe el toque. {%- endcomment -%}
           <svg
@@ -122,7 +127,7 @@
           >
             {%- for clave in claves -%}
               {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-              {%- assign pieza = piezas[i] -%}
+              {%- for pieza in piezas offset: i limit: 1 -%}
               {%- assign producto = pieza.producto.value -%}
               {%- assign zona = pieza.zona.value -%}
               {%- if producto != blank and zona.puntos.size > 2 -%}
@@ -148,12 +153,13 @@
                 ></polygon>
               {%- endif -%}
             {%- endfor -%}
+            {%- endfor -%}
           </svg>
 
           {%- comment -%} Puntos indicadores: decorativos, el botón accesible es la zona. {%- endcomment -%}
           {%- for clave in claves -%}
             {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-            {%- assign pieza = piezas[i] -%}
+            {%- for pieza in piezas offset: i limit: 1 -%}
             {%- assign zona = pieza.zona.value -%}
             {%- if pieza.producto.value != blank and zona.punto.size == 2 -%}
               <button
@@ -166,6 +172,7 @@
                 aria-hidden="true"
               ></button>
             {%- endif -%}
+          {%- endfor -%}
           {%- endfor -%}
         </div>
       </div>
@@ -195,7 +202,7 @@
       <ul class="pq-sala__lista">
         {%- for clave in claves -%}
           {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-          {%- assign pieza = piezas[i] -%}
+          {%- for pieza in piezas offset: i limit: 1 -%}
           {%- assign producto = pieza.producto.value -%}
           {%- if producto != blank -%}
             <li data-pieza="{{ pieza.system.handle }}">
@@ -222,6 +229,7 @@
             </li>
           {%- endif -%}
         {%- endfor -%}
+        {%- endfor -%}
       </ul>
 
       {% render 'pq-ficha' %}
@@ -232,7 +240,7 @@
           {%- assign primero = true -%}
           {%- for clave in claves -%}
             {%- assign i = clave | split: ':' | last | minus: 1000 -%}
-            {%- assign pieza = piezas[i] -%}
+            {%- for pieza in piezas offset: i limit: 1 -%}
             {%- assign producto = pieza.producto.value -%}
             {%- if producto != blank -%}
               {%- assign variante = producto.selected_or_first_available_variant -%}
@@ -253,6 +261,7 @@
               }
             {%- endif -%}
           {%- endfor -%}
+          {%- endfor -%}
         }
       </script>
     </section>
@@ -271,6 +280,22 @@
       "metaobject_type": "sala",
       "label": "Sala",
       "info": "En la página propia de cada sala se usa esa sala. Elegí una solo si ponés esta sección en otra página."
+    },
+    {
+      "type": "select",
+      "id": "tamano",
+      "label": "Tamaño de la sala",
+      "options": [
+        {
+          "value": "pantalla",
+          "label": "Pantalla completa"
+        },
+        {
+          "value": "ancho",
+          "label": "Ancho de la página"
+        }
+      ],
+      "default": "pantalla"
     },
     {
       "type": "checkbox",
