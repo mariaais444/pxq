@@ -6,7 +6,12 @@
   "type": "module",
   "scripts": {
     "preparar:ejemplo": "node scripts/preparar-sala.mjs capas-ejemplo prototipo/sala",
+    "sala2:provisoria": "node scripts/generar-sala-2-provisoria.mjs && node scripts/preparar-sala.mjs capas-ejemplo prototipo/sala && node scripts/preparar-sala.mjs capas-sala-2 prototipo/sala-2",
+    "preparar:sala2": "node scripts/preparar-sala.mjs capas-sala-2 prototipo/sala-2",
     "probar:seccion": "node scripts/probar-seccion.mjs",
+    "servidor": "node scripts/servidor.mjs",
+    "probar:prototipo": "node scripts/probar-prototipo.mjs",
+    "probar:puertas": "node scripts/probar-puertas.mjs",
     "instalar": "node scripts/instalar-en-tema.mjs"
   },
   "dependencies": {

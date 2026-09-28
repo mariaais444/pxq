@@ -1,0 +1,40 @@
+{
+  "id": "sala-2",
+  "titulo": "Sala 2 · Objetos (provisoria)",
+  "provisoria": "Generada por scripts/generar-sala-2-provisoria.mjs. Reemplazar por las ilustraciones reales.",
+  "orden": [
+    "sofa2",
+    "sillon2",
+    "mesa2"
+  ],
+  "etiquetas": {
+    "sofa2": "Sofá (provisorio)",
+    "sillon2": "Sillón (provisorio)",
+    "mesa2": "Mesa baja (provisoria)"
+  },
+  "puertas": [
+    {
+      "id": "a-sala-ejemplo",
+      "destino": "sala-ejemplo",
+      "etiqueta": "Sala de ejemplo",
+      "puntos": [
+        [
+          15.23,
+          42.75
+        ],
+        [
+          20.94,
+          44.75
+        ],
+        [
+          20.94,
+          78.63
+        ],
+        [
+          15.23,
+          78.63
+        ]
+      ]
+    }
+  ]
+}

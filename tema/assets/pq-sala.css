@@ -358,3 +358,54 @@
 .pq-sala[data-tamano='pantalla'] .pq-sala__subtitulo {
   padding-top: 2rem;
 }
+
+/* --- Puertas entre salas --- */
+.pq-sala__puerta-abierta {
+  opacity: 0;
+}
+.pq-sala__puerta-zona polygon {
+  fill: transparent;
+  pointer-events: visible;
+  cursor: pointer;
+}
+.pq-sala__puerta {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  transform: translate(-50%, -50%);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(29, 26, 23, 0.78);
+  color: var(--pq-papel);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.pq-sala__puerta::after {
+  content: ' →';
+}
+.pq-sala__puerta:hover,
+.pq-sala__puerta:focus-visible,
+.pq-sala__lienzo:has(.pq-sala__puerta-zona:hover) .pq-sala__puerta {
+  background: var(--pq-tinta);
+  outline: 2px solid var(--pq-papel);
+  outline-offset: 2px;
+}
+/* Velo claro del final de la fase 1 y aviso para lectores de pantalla. */
+.pq-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  background: #f4efe6;
+  opacity: 0;
+  pointer-events: none;
+}
+.pq-anuncio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

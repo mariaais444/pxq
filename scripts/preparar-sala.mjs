@@ -4,7 +4,10 @@
 //   node scripts/preparar-sala.mjs <carpeta-de-capas> <carpeta-de-salida>
 //
 // Lee 00_fondo.png, 10_sombra_<pieza>.png y 20_objeto_<pieza>.png (todas del
-// mismo tamaño) y, opcionalmente, sala.config.json con el orden y los nombres.
+// mismo tamaño) y, opcionalmente, sala.config.json con el orden, los nombres y las puertas.
+// Cada puerta puede tener 30_puerta_<id>_cerrada.png y 30_puerta_<id>_abierta.png
+// (opcionales, del tamaño del lienzo). Su zona sale de "puntos" en el config (en %)
+// o, si no están, de la parte visible de la capa cerrada.
 // Para cada capa genera WebP en 1600 y 800 px de ancho (sin agrandar: si el
 // lienzo es más chico que 1600, se usa su ancho real), calcula el contorno
 // clickeable de cada objeto y escribe sala.json (y sala.data.js, para poder
@@ -36,6 +39,7 @@ const objetos = new Map();
 const sombras = new Map();
 for (const f of archivos) {
   let m;
+  if (/^30_puerta_/i.test(f)) continue;
   if ((m = f.match(/^20_objeto_(.+)\.png$/i))) objetos.set(m[1], f);
   else if ((m = f.match(/^10_sombra_(.+)\.png$/i))) sombras.set(m[1], f);
 }
@@ -111,6 +115,32 @@ for (const p of infoPiezas) {
     },
   });
   console.log(`${p.pieza.padEnd(10)} orden ${String(orden).padStart(3)}  ${String(p.puntos.length).padStart(2)} puntos  caja ${p.caja.join(',')}`);
+}
+
+// Puertas: zona clickeable, punto de la etiqueta (arriba) y punto de zoom (centro), en %.
+sala.puertas = [];
+for (const pc of config.puertas || []) {
+  const capa = (estado) => archivos.find((f) => f.toLowerCase() === `30_puerta_${pc.id}_${estado}.png`.toLowerCase());
+  const cerrada = capa('cerrada');
+  const abierta = capa('abierta');
+  let puntos = pc.puntos;
+  if (!puntos && cerrada) {
+    const { data } = await sharp(path.join(entrada, cerrada)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    puntos = calcularZona(data, ancho, alto).puntos.map(([x, y]) => [pct(x, ancho), pct(y, alto)]);
+  }
+  if (!puntos || puntos.length < 3) throw new Error(`La puerta "${pc.id}" no tiene zona: agregá "puntos" en sala.config.json o 30_puerta_${pc.id}_cerrada.png.`);
+  const xs = puntos.map((q) => q[0]), ys = puntos.map((q) => q[1]);
+  const cx = Math.round(((Math.min(...xs) + Math.max(...xs)) / 2) * 100) / 100;
+  const cy = Math.round(((Math.min(...ys) + Math.max(...ys)) / 2) * 100) / 100;
+  sala.puertas.push({
+    id: pc.id,
+    destino: pc.destino,
+    etiqueta: pc.etiqueta || pc.destino,
+    capa_cerrada: cerrada ? await exportar(cerrada, `puerta_${pc.id}_cerrada`) : null,
+    capa_abierta: abierta ? await exportar(abierta, `puerta_${pc.id}_abierta`) : null,
+    zona: { puntos, punto: [cx, Math.max(3, Math.round((Math.min(...ys) - 3.5) * 100) / 100)], zoom: [cx, cy] },
+  });
+  console.log(`puerta ${pc.id} → ${pc.destino}  zoom ${cx},${cy}${cerrada ? '  con capas' : ''}`);
 }
 
 const json = JSON.stringify(sala, null, 2);

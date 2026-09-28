@@ -1,7 +1,14 @@
 {
   "id": "sala-ejemplo",
   "titulo": "Sala de ejemplo",
-  "orden": ["obra", "aparador", "lampara", "sofa", "sillon", "mesa"],
+  "orden": [
+    "obra",
+    "aparador",
+    "lampara",
+    "sofa",
+    "sillon",
+    "mesa"
+  ],
   "etiquetas": {
     "obra": "Obra",
     "aparador": "Aparador",
@@ -9,5 +16,30 @@
     "sofa": "Sofá",
     "sillon": "Sillón",
     "mesa": "Mesa ratona"
-  }
+  },
+  "puertas": [
+    {
+      "id": "a-sala-2",
+      "destino": "sala-2",
+      "etiqueta": "Sala 2 · Objetos",
+      "puntos": [
+        [
+          78.98,
+          44.75
+        ],
+        [
+          84.69,
+          42.75
+        ],
+        [
+          84.69,
+          78.63
+        ],
+        [
+          78.98,
+          78.63
+        ]
+      ]
+    }
+  ]
 }

@@ -16,6 +16,7 @@
   assign alto = sala.alto.value | default: 800
   assign titulo = sala.titulo.value | default: sala.system.handle
   assign piezas = sala.piezas.value
+  assign puertas = sala.puertas.value
 
   # Orden de apilado: de atrás hacia adelante según el campo "orden".
   # Liquid no ordena objetos por un campo, así que ordenamos textos como "1000010:1003" (orden + posición).
@@ -37,6 +38,9 @@
 
 {{ 'pq-sala.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'pq-sala.js' | asset_url }}" defer></script>
+{%- if puertas.size > 0 %}
+  <script src="{{ 'pq-sala-puertas.js' | asset_url }}" defer></script>
+{%- endif %}
 
 <div class="section {% if section.settings.tamano == 'ancho' %}section--page-width section--mobile-full-width{% else %}section--full-width{% endif %}">
   {%- if sala == blank or sala.fondo.value == blank -%}
@@ -47,6 +51,9 @@
     <section
       class="pq-sala"
       data-pq-sala
+      data-seccion="{{ section.id }}"
+      data-url="{{ sala.url | default: request.path }}"
+      data-titulo="{{ titulo | escape }}"
       data-vendido="{{ section.settings.vendido }}"
       data-tamano="{{ section.settings.tamano | default: 'pantalla' }}"
       data-puntos="{% if section.settings.mostrar_puntos %}si{% else %}no{% endif %}"
@@ -71,6 +78,36 @@
               loading: 'eager',
               fetchpriority: 'high'
           -}}
+
+          {%- comment -%} Puertas: capa cerrada y abierta (opcionales). La abierta aparece durante la transición. {%- endcomment -%}
+          {%- for puerta in puertas -%}
+            {%- assign estados = 'cerrada,abierta' | split: ',' -%}
+            {%- for estado in estados -%}
+              {%- if estado == 'cerrada' -%}
+                {%- assign capa_puerta = puerta.capa_cerrada.value -%}
+              {%- else -%}
+                {%- assign capa_puerta = puerta.capa_abierta.value -%}
+              {%- endif -%}
+              {%- if capa_puerta != blank -%}
+                {%- assign clases = 'pq-sala__capa pq-sala__puerta-capa pq-sala__puerta-' | append: estado -%}
+                {{-
+                  capa_puerta
+                  | image_url: width: 1600
+                  | image_tag:
+                    class: clases,
+                    data-puerta: puerta.system.handle,
+                    widths: anchos,
+                    sizes: lienzo_sizes,
+                    width: ancho,
+                    height: alto,
+                    alt: '',
+                    loading: 'eager',
+                    fetchpriority: 'low',
+                    decoding: 'async'
+                -}}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor -%}
 
           {%- for clave in claves -%}
             {%- assign i = clave | split: ':' | last | minus: 1000 -%}
@@ -125,6 +162,28 @@
             preserveAspectRatio="none"
             aria-label="Piezas de la sala"
           >
+            {%- comment -%} Zonas de las puertas: para el mouse. El enlace accesible es la etiqueta visible. {%- endcomment -%}
+            {%- for puerta in puertas -%}
+              {%- assign destino = puerta.destino.value -%}
+              {%- assign zona = puerta.zona.value -%}
+              {%- if destino.url != blank and zona.puntos.size > 2 -%}
+                <a
+                  href="{{ destino.url }}"
+                  class="pq-sala__puerta-zona"
+                  data-pq-puerta="{{ puerta.system.handle }}"
+                  data-zoom="{{ zona.zoom | join: ',' }}"
+                  tabindex="-1"
+                  aria-hidden="true"
+                >
+                  <polygon points="
+                    {%- for p in zona.puntos -%}
+                      {{- p[0] | times: ancho | divided_by: 100.0 | round: 1 }},{{ p[1] | times: alto | divided_by: 100.0 | round: 1 }}
+                      {%- unless forloop.last %} {% endunless -%}
+                    {%- endfor -%}
+                  "></polygon>
+                </a>
+              {%- endif -%}
+            {%- endfor -%}
             {%- for clave in claves -%}
               {%- assign i = clave | split: ':' | last | minus: 1000 -%}
               {%- for pieza in piezas offset: i limit: 1 -%}
@@ -174,6 +233,22 @@
             {%- endif -%}
           {%- endfor -%}
           {%- endfor -%}
+
+          {%- for puerta in puertas -%}
+            {%- assign destino = puerta.destino.value -%}
+            {%- assign zona = puerta.zona.value -%}
+            {%- if destino.url != blank and zona.punto.size == 2 -%}
+              <a
+                class="pq-sala__puerta"
+                href="{{ destino.url }}"
+                data-pq-puerta="{{ puerta.system.handle }}"
+                data-zoom="{{ zona.zoom | join: ',' }}"
+                style="--x: {{ zona.punto[0] }}; --y: {{ zona.punto[1] }};"
+              >
+                {{- puerta.etiqueta.value | default: destino.titulo.value | escape -}}
+              </a>
+            {%- endif -%}
+          {%- endfor -%}
         </div>
       </div>
 
@@ -182,7 +257,7 @@
       {%- endif -%}
 
       {%- assign vecinas = sala.salas_vecinas.value -%}
-      {%- if vecinas.size > 0 -%}
+      {%- if vecinas.size > 0 and puertas.size == 0 -%}
         <nav class="pq-sala__puertas" aria-label="Otras salas">
           <ul>
             {%- for vecina in vecinas -%}

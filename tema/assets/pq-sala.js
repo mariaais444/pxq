@@ -281,6 +281,7 @@
       el.setAttribute('data-pq-iniciada', '');
       new Sala(el);
     });
+  window.PQSala.iniciar = iniciar; // lo usa pq-sala-puertas.js al traer otra sala
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
   document.addEventListener('shopify:section:load', iniciar); // editor de temas
