@@ -1,0 +1,13 @@
+{
+  "id": "sala-ejemplo",
+  "titulo": "Sala de ejemplo",
+  "orden": ["obra", "aparador", "lampara", "sofa", "sillon", "mesa"],
+  "etiquetas": {
+    "obra": "Obra",
+    "aparador": "Aparador",
+    "lampara": "Lámpara",
+    "sofa": "Sofá",
+    "sillon": "Sillón",
+    "mesa": "Mesa ratona"
+  }
+}

@@ -1,0 +1,280 @@
+/* p*q · salas por capas. Mismo archivo para el prototipo y para assets/pq-sala.css del tema. */
+
+.pq-sala {
+  --pq-tinta: #1d1a17;
+  --pq-papel: #fbf8f3;
+  --pq-acento: #1d1a17;
+  --pq-vendido: #c62f22;
+  --pq-borde: rgba(29, 26, 23, 0.15);
+  color: var(--pq-tinta);
+}
+
+/* --- Lienzo: en celular mide al menos 820 px y se desplaza de costado --- */
+.pq-sala__scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.pq-sala__lienzo {
+  position: relative;
+  width: 100%;
+  min-width: 820px;
+  aspect-ratio: var(--pq-ancho) / var(--pq-alto);
+  overflow: hidden;
+  background: #d9d4cc;
+}
+
+/* Todas las capas ocupan el lienzo completo. Nunca se posicionan por separado. */
+.pq-sala__capa {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+.pq-sala__objeto.is-activa {
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
+}
+
+/* --- Zonas clickeables (SVG) --- */
+.pq-sala__zonas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.pq-sala__zona {
+  fill: transparent;
+  stroke: none;
+  pointer-events: visible;
+  cursor: pointer;
+  outline: none;
+}
+.pq-sala__zona:focus-visible {
+  stroke: var(--pq-papel);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+
+/* --- Puntos indicadores (decorativos: el botón accesible es la zona) --- */
+.pq-sala__punto {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.pq-sala__punto::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--pq-papel);
+  box-shadow: 0 0 0 2px var(--pq-acento), 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.pq-sala[data-puntos='no'] .pq-sala__punto {
+  display: none;
+}
+
+/* --- Piezas vendidas --- */
+.pq-sala[data-vendido='ocultar'] .pq-sala__capa[data-vendido],
+.pq-sala[data-vendido='ocultar'] .pq-sala__punto[data-vendido] {
+  visibility: hidden;
+}
+.pq-sala[data-vendido='ocultar'] .pq-sala__zona[data-vendido] {
+  pointer-events: none;
+}
+/* El punto rojo se muestra aunque los puntos estén apagados: es el aviso de "vendido". */
+.pq-sala[data-vendido='punto'] .pq-sala__punto[data-vendido] {
+  display: block;
+}
+.pq-sala[data-vendido='punto'] .pq-sala__punto[data-vendido]::before {
+  background: var(--pq-vendido);
+  box-shadow: 0 0 0 2px var(--pq-papel), 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Ayuda, puertas y lista de piezas --- */
+.pq-sala__ayuda {
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+.pq-sala__puertas ul,
+.pq-sala__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pq-sala__puertas ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.pq-sala__lista li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.25rem 1rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--pq-borde);
+}
+.pq-sala__lista [data-pq-estado][data-vendido] {
+  color: var(--pq-vendido);
+}
+.pq-sala__ver {
+  font: inherit;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+@media (max-width: 560px) {
+  .pq-sala__lista li {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+/* --- Ficha: panel lateral en escritorio, hoja desde abajo en celular --- */
+.pq-ficha {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: min(420px, 100%);
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  padding: 1.5rem;
+  border: 0;
+  background: var(--pq-papel);
+  color: var(--pq-tinta);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pq-ficha::backdrop {
+  background: rgba(20, 18, 16, 0.4);
+}
+@media (max-width: 749px) {
+  .pq-ficha {
+    inset: auto 0 0 0;
+    width: 100%;
+    height: auto;
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  }
+}
+.pq-ficha__cerrar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+.pq-ficha__imagen {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  background: #efe9e0;
+}
+.pq-ficha__titulo {
+  margin: 0 2.5rem 0.25rem 0;
+  font-size: 1.35rem;
+}
+.pq-ficha__precio {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+.pq-ficha__estado {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+.pq-ficha__estado[data-vendido] {
+  color: var(--pq-vendido);
+}
+.pq-ficha__acciones {
+  display: grid;
+  gap: 0.5rem;
+}
+.pq-ficha__acciones button {
+  font: inherit;
+  min-height: 48px;
+  border-radius: 4px;
+  border: 1px solid var(--pq-tinta);
+  cursor: pointer;
+}
+.pq-ficha__acciones [data-pq-agregar] {
+  background: var(--pq-tinta);
+  color: var(--pq-papel);
+}
+.pq-ficha__acciones [data-pq-comprar] {
+  background: none;
+  color: var(--pq-tinta);
+}
+.pq-ficha__acciones button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pq-ficha__mensaje {
+  min-height: 1.5em;
+  margin: 0.75rem 0;
+}
+.pq-ficha__mensaje[data-error] {
+  color: var(--pq-vendido);
+}
+
+/* --- Movimiento: solo si la persona no pidió reducirlo --- */
+@media (prefers-reduced-motion: no-preference) {
+  .pq-sala__objeto {
+    transition: filter 0.15s ease;
+  }
+  .pq-sala__punto:not([data-vendido])::before {
+    animation: pq-latido 2.4s ease-in-out infinite;
+  }
+  .pq-ficha[open] {
+    animation: pq-entrar-lado 0.22s ease-out;
+  }
+  @media (max-width: 749px) {
+    .pq-ficha[open] {
+      animation-name: pq-entrar-abajo;
+    }
+  }
+}
+@keyframes pq-latido {
+  50% {
+    transform: scale(1.25);
+  }
+}
+@keyframes pq-entrar-lado {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes pq-entrar-abajo {
+  from {
+    transform: translateY(100%);
+  }
+}

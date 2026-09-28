@@ -1,0 +1,13 @@
+{
+  "name": "pq-salas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Salas por capas de p*q para Shopify",
+  "type": "module",
+  "scripts": {
+    "preparar:ejemplo": "node scripts/preparar-sala.mjs capas-ejemplo prototipo/sala"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}

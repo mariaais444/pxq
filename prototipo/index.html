@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>p*q · Prototipo de sala</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Prototipo local de una sala ilustrada de p*q, con productos de prueba.">
+    <!-- En el tema, el fondo sale en el HTML del servidor; acá lo pedimos antes porque la sala se arma con JS. -->
+    <link rel="preload" as="image" href="sala/fondo-1280.webp" imagesrcset="sala/fondo-800.webp 800w, sala/fondo-1280.webp 1280w" imagesizes="max(100vw, 820px)" fetchpriority="high">
+    <link rel="stylesheet" href="pq-sala.css">
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #fbf8f3; color: #1d1a17; }
+      .encabezado { display: flex; justify-content: space-between; align-items: center; padding: 1rem clamp(1rem, 4vw, 2.5rem); }
+      .encabezado a { color: inherit; }
+      .marca { font-weight: 700; font-size: 1.4rem; letter-spacing: 0.02em; }
+      main { max-width: 1280px; margin: 0 auto; }
+      .pq-sala > :not(.pq-sala__scroller):not(dialog) { margin-inline: clamp(1rem, 4vw, 2.5rem); }
+      .controles { margin: 2rem clamp(1rem, 4vw, 2.5rem); padding: 1rem; border: 1px dashed #b9b1a5; font-size: 0.9rem; }
+      .controles a { color: inherit; margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <header class="encabezado">
+      <span class="marca">p*q</span>
+      <div id="shopify-section-cart-icon-bubble"><a href="#carrito">Carrito (<span data-contador>0</span>)</a></div>
+    </header>
+    <main>
+      <div id="sala"></div>
+      <aside class="controles" aria-label="Opciones del prototipo">
+        <strong>Prototipo:</strong> productos de prueba, sin conexión a Shopify.
+        <p>
+          Lo vendido:
+          <a href="?vendido=ocultar">ocultar</a>
+          <a href="?vendido=punto">punto rojo</a>
+          · Puntos:
+          <a href="?puntos=si">mostrar</a>
+          <a href="?puntos=no">ocultar</a>
+        </p>
+        <p>Casos de prueba: la lámpara ya está vendida; el sillón figura disponible pero al abrirlo se confirma que se vendió; la mesa se puede agregar una sola vez (la segunda vez responde 422).</p>
+      </aside>
+    </main>
+    <script src="sala/sala.data.js"></script>
+    <script src="prototipo.js"></script>
+    <script src="pq-sala.js"></script>
+  </body>
+</html>
